@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOUND MACHINE — clip board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#15151a;
+    --panel:#1e1e26;
+    --panel-hi:#26262f;
+    --pink:#ff3b81;
+    --yellow:#e8ff3c;
+    --violet:#7c6cf5;
+    --text:#f1eee6;
+    --muted:#84838f;
+    --border:#31313c;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Space Mono', monospace;
+    min-height:100vh;
+    padding:32px 24px 80px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important; transition:none !important;}
+  }
+
+  .wrap{max-width:1180px; margin:0 auto;}
+
+  header{margin-bottom:28px;}
+
+  .eyebrow{
+    color:var(--pink);
+    font-size:12px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    margin:0 0 10px;
+  }
+
+  h1{
+    font-family:'Archivo Black', sans-serif;
+    font-size:clamp(36px, 7vw, 76px);
+    line-height:0.95;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+
+  h1 span{color:var(--yellow);}
+
+  .sub{
+    color:var(--muted);
+    font-size:13px;
+    max-width:520px;
+    line-height:1.5;
+    margin:10px 0 0;
+  }
+
+  /* fake VU meter — the signature element */
+  .meter{
+    display:flex;
+    gap:3px;
+    align-items:flex-end;
+    height:34px;
+    margin:22px 0 30px;
+    padding:8px 10px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:6px;
+    overflow:hidden;
+  }
+  .meter .bar{
+    flex:1;
+    min-width:2px;
+    height:15%;
+    background:var(--violet);
+    border-radius:1px;
+    transform-origin:bottom;
+    transition:background .2s;
+  }
+  body.playing .meter .bar{
+    background:var(--pink);
+    animation:bounce 0.7s ease-in-out infinite;
+  }
+  @keyframes bounce{
+    0%,100%{height:10%;}
+    50%{height:var(--h,90%);}
+  }
+
+  .controls{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    align-items:center;
+    margin-bottom:22px;
+  }
+
+  .search{
+    flex:1;
+    min-width:220px;
+    position:relative;
+  }
+  .search::before{
+    content:'>';
+    position:absolute;
+    left:14px;
+    top:50%;
+    transform:translateY(-50%);
+    color:var(--yellow);
+    font-weight:700;
+  }
+  .search input{
+    width:100%;
+    background:var(--panel);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:'Space Mono', monospace;
+    font-size:14px;
+    padding:13px 14px 13px 32px;
+    border-radius:6px;
+    outline:none;
+  }
+  .search input:focus{border-color:var(--pink);}
+  .search input::placeholder{color:var(--muted);}
+
+  .count{
+    color:var(--muted);
+    font-size:12px;
+    white-space:nowrap;
+  }
+  .count b{color:var(--yellow); font-weight:400;}
+
+  .stop-all{
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--muted);
+    font-family:'Space Mono', monospace;
+    font-size:12px;
+    padding:12px 16px;
+    border-radius:6px;
+    cursor:pointer;
+    transition:.15s;
+  }
+  .stop-all:hover{border-color:var(--pink); color:var(--pink);}
+
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));
+    gap:10px;
+  }
+
+  .pad{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:16px;
+    text-align:left;
+    cursor:pointer;
+    color:var(--text);
+    font-family:'Space Mono', monospace;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    min-height:82px;
+    transition:transform .08s ease, border-color .15s, background .15s;
+    position:relative;
+    overflow:hidden;
+  }
+  .pad:hover{border-color:var(--violet); background:var(--panel-hi);}
+  .pad:active{transform:scale(0.97);}
+  .pad.playing{
+    border-color:var(--pink);
+    background:var(--panel-hi);
+    animation:pulse .5s ease;
+  }
+  @keyframes pulse{
+    0%{transform:scale(1);}
+    30%{transform:scale(0.96);}
+    100%{transform:scale(1);}
+  }
+  .pad.missing{opacity:0.45;}
+  .pad.missing:hover{border-color:var(--border); background:var(--panel);}
+
+  .pad .name{
+    font-size:13px;
+    line-height:1.35;
+    word-break:break-word;
+    text-transform:lowercase;
+  }
+  .pad .row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:auto;
+  }
+  .pad .tag{
+    font-size:10px;
+    color:var(--muted);
+    letter-spacing:.05em;
+  }
+  .pad .icon{
+    width:22px; height:22px;
+    border-radius:50%;
+    background:var(--yellow);
+    color:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    font-size:10px;
+    flex:none;
+  }
+  .pad.playing .icon{background:var(--pink); color:var(--bg);}
+
+  .empty{
+    color:var(--muted);
+    font-size:13px;
+    padding:40px 0;
+    text-align:center;
+    grid-column:1/-1;
+  }
+
+  footer{
+    max-width:1180px;
+    margin:40px auto 0;
+    color:var(--muted);
+    font-size:11px;
+    border-top:1px solid var(--border);
+    padding-top:16px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">local clip board · 36 loaded</p>
+    <h1>SOUND<span>MACHINE</span></h1>
+    <p class="sub">Every clip pulled straight from the downloads folder. Click a pad to play it, click it again to stop. Built for grabbing the right reaction sound mid-edit without digging through a file explorer.</p>
+  </header>
+
+  <div class="meter" id="meter" aria-hidden="true"></div>
+
+  <div class="controls">
+    <div class="search">
+      <input id="search" type="text" placeholder="filter clips... try 'meme' or 'fah'" autocomplete="off">
+    </div>
+    <span class="count"><b id="visibleCount">36</b> / 36 clips</span>
+    <button class="stop-all" id="stopAll">■ stop all</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <footer>
+    Files load from <code>/sounds/&lt;name&gt;.mp3</code>. Dimmed pads mean that file isn't in the sounds folder yet — see README.md.
+  </footer>
+</div>
+
+<script>
+  const clips = [
+    "kaise-kaise-log-rehte-hain","is-sajjan-ko-kya-takleef-hai-bhai","tehelka-omlette",
+    "ooo-hahah","gay-gay-gay-gay","core-sound-effect",
+    "awkward-cricket-sound-effect","the-weeknd-rizzz","gta-v-death-sound-effect-102",
+    "funny-sound-that-will-make-you-to-laugh_1","fahhhhh","1-108",
+    "ny-video-online-audio-converter","snore-mimimimimimi","a-few-moments-later-sponge-bob-sfx-fun",
+    "oh-my-god-meme","drip-goku-meme-song-original-dragon-ball-super-music-clash-of-g",
+    "tiki-tiki","emotional-damage-meme","censor-beep-1","prowler-sound-effect_6bXErot",
+    "oh-my-god-bro-oh-hell-nah-man","dun-dun-dun-sound-effect-brass_8nFBccR","spiderman-meme-song",
+    "error_CDOxCYm","ack","tf_nemesis","movie_1","romanceeeeeeeeeeeeeee","dexter-meme",
+    "bone-crack","anime-wow-sound-effect","chicken-on-tree-screaming","among-us-role-reveal-sound",
+    "fahhh_KcgAXfs","fahhhhhhhhhhhhhhh"
+  ];
+
+  const grid = document.getElementById('grid');
+  const meter = document.getElementById('meter');
+  const searchInput = document.getElementById('search');
+  const visibleCount = document.getElementById('visibleCount');
+  const stopAllBtn = document.getElementById('stopAll');
+
+  // build fake VU meter bars
+  for(let i=0;i<48;i++){
+    const b = document.createElement('div');
+    b.className='bar';
+    b.style.setProperty('--h', (40+Math.random()*60)+'%');
+    b.style.animationDelay = (Math.random()*0.6)+'s';
+    meter.appendChild(b);
+  }
+
+  let currentAudio = null;
+  let currentPad = null;
+
+  function prettyName(file){
+    return file.replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim();
+  }
+
+  function stopCurrent(){
+    if(currentAudio){
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    }
+    if(currentPad) currentPad.classList.remove('playing');
+    document.body.classList.remove('playing');
+    currentAudio = null;
+    currentPad = null;
+  }
+
+  clips.forEach(file=>{
+    const pad = document.createElement('button');
+    pad.className = 'pad';
+    pad.innerHTML = `
+      <span class="name">${prettyName(file)}</span>
+      <span class="row">
+        <span class="tag">.mp3</span>
+        <span class="icon">▶</span>
+      </span>`;
+    pad.dataset.name = prettyName(file).toLowerCase();
+
+    pad.addEventListener('click', ()=>{
+      // toggle off if same pad already playing
+      if(currentPad === pad){
+        stopCurrent();
+        return;
+      }
+      stopCurrent();
+      const audio = new Audio(`sounds/${file}.mp3`);
+      audio.addEventListener('ended', stopCurrent);
+      audio.addEventListener('error', ()=>{
+        pad.classList.add('missing');
+        stopCurrent();
+      });
+      audio.play().then(()=>{
+        pad.classList.add('playing');
+        document.body.classList.add('playing');
+        currentAudio = audio;
+        currentPad = pad;
+      }).catch(()=>{
+        pad.classList.add('missing');
+      });
+    });
+
+    grid.appendChild(pad);
+  });
+
+  stopAllBtn.addEventListener('click', stopCurrent);
+
+  searchInput.addEventListener('input', ()=>{
+    const q = searchInput.value.trim().toLowerCase();
+    let count = 0;
+    document.querySelectorAll('.pad').forEach(pad=>{
+      const match = pad.dataset.name.includes(q);
+      pad.style.display = match ? '' : 'none';
+      if(match) count++;
+    });
+    visibleCount.textContent = count;
+  });
+</script>
+</body>
+</html>
